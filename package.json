@@ -60,6 +60,7 @@
   },
   "scripts": {
     "test": "gulp tests",
+    "prepare": "gulp package",
     "package": "gulp package"
   }
 }
