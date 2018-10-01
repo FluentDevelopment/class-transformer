@@ -22,9 +22,9 @@ export function Transform(transformFn: (value: any, obj: any, transformationType
  * Specifies a type of the property.
  */
 export function Type(typeFunction?: (type?: TypeOptions) => Function) {
-    return function(target: any, key: string) {
-        const type = (Reflect as any).getMetadata("design:type", target, key);
-        const metadata = new TypeMetadata(target.constructor, key, type, typeFunction);
+    return function (target: Object | Function, propertyName?: string) {
+        const type = (Reflect as any).getMetadata("design:type", target, propertyName);
+        const metadata = new TypeMetadata(target instanceof Function ? target : target.constructor, propertyName, type, typeFunction);
         defaultMetadataStorage.addTypeMetadata(metadata);
     };
 }

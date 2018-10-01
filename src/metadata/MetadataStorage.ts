@@ -86,6 +86,11 @@ export class MetadataStorage {
         return exclude ? "excludeAll" : "exposeAll";
     }
 
+    getTargetTypeMetadata(target: Function) {
+        const metadata = this._typeMetadatas.find(metadata => metadata.target === target && metadata.propertyName === undefined);
+        return metadata;
+    }
+
     getExposedMetadatas(target: Function): ExposeMetadata[] {
         return this.getMetadata(this._exposeMetadatas, target);
     }

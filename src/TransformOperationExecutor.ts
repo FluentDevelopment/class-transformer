@@ -80,6 +80,15 @@ export class TransformOperationExecutor {
             if (!targetType && value.constructor !== Object/* && TransformationType === TransformationType.CLASS_TO_PLAIN*/) targetType = value.constructor;
             if (!targetType && source) targetType = source.constructor;
 
+            // further resolve any @Type() decorator on the target type
+            if (targetType) {
+                const metadata = defaultMetadataStorage.getTargetTypeMetadata(targetType);
+                if (metadata && typeof metadata.typeFunction === "function") {
+                    const options: TypeOptions = { newObject: undefined, object: value, property: undefined };
+                    targetType = metadata.typeFunction(options);
+                }
+            }
+
             if (this.options.enableCircularCheck) {
                 // add transformed type to prevent circular references
                 this.transformedTypesMap.set(value, {level: level, object: value});
@@ -87,14 +96,23 @@ export class TransformOperationExecutor {
 
             const keys = this.getKeys(targetType, value);
             let newValue: any = source ? source : {};
-            if (!source && (this.transformationType === TransformationType.PLAIN_TO_CLASS || this.transformationType === TransformationType.CLASS_TO_CLASS)) {
-                if (isMap) {
-                    newValue = new Map();
+            if (this.transformationType === TransformationType.PLAIN_TO_CLASS || this.transformationType === TransformationType.CLASS_TO_CLASS) {
+                if (!source) {
+                    if (isMap) {
+                        newValue = new Map();
+                    } else if (targetType) {
+                        newValue = new (targetType as any)();
+                    } else {
+                        newValue = {};
+                    }
                 } else if (targetType) {
-                    newValue = new (targetType as any)();
-                } else {
-                    newValue = {};
-                }
+                    // ie. only plainToClassFromExist or classToClassFromExist
+                    // Ensure that provided existing object is of the expected type
+                    const valueProto = Object.getPrototypeOf(newValue);
+                    if (valueProto !== targetType.prototype) {
+                        Object.setPrototypeOf(newValue, targetType.prototype);
+                    }
+                };
             }
 
             // traverse over keys
